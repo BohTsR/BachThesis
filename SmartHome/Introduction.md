@@ -2,8 +2,7 @@
 
 * [Components and tools](#components-and-tools)
 * [Installation](#installation)
-* [Usage](#usage)
-* [MircoPython](#micropython)
+* [Usage and MircoPython](#Usage-and-MircoPython)
 * [Examples](#examples)
 * [References](#references)
 
@@ -33,4 +32,13 @@ Basically, these are all the necessary components for a successful implementatio
 5. After successful installation, we should see this message in the terminal, which means that we are ready to work with ESP32
 <img width="585" alt="Screenshot 2024-03-22 at 08 34 36" src="https://github.com/BohTsR/BachThesis/assets/160582711/78d92adc-1b22-43fe-8aa5-e029acea22a4">
 
-## Usage
+## Usage and MircoPython
+For a simple health check, diodes are usually used to turn on/off, or write "Hello World" to the microcontroller itself.  
+```python 
+from machine import Pin
+print("Hello world! Check")
+```
+Result: 
+
+<img width="238" alt="Screenshot 2024-03-22 at 10 20 46" src="https://github.com/BohTsR/BachThesis/assets/160582711/84986080-1686-451a-bed4-30e297ce1efd">
+
