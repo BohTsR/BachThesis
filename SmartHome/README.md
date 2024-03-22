@@ -23,5 +23,14 @@ Basically, these are all the necessary components for a successful implementatio
 2. After successful installation, we go to our microcontroller and see which driver it uses. To do this, we find the chip, as shown in the picture, and its name will correspond to the driver we need
 ![13507ffc05e5c59bd7a2d0dd8626b4abf05b1bb4](https://github.com/BohTsR/BachThesis/assets/160582711/fa039be4-7348-40a0-ac09-ddadd442537d)
 
-3. Next, we connect the ESP32 to the computer, log in to Thonny, and choose a connection port
-   
+3. Next, we connect ESP32 to the computer, log in to Thonny and go to the Run section, where we select the Configure Interpreter section 
+<img width="893" alt="Screenshot 2024-03-22 at 08 22 37" src="https://github.com/BohTsR/BachThesis/assets/160582711/6acef568-250a-47c7-9073-338abfd36240">
+
+
+4. Next, we select "Install or update MircroPython" tab and select what is shown in the photo below 
+<img width="654" alt="Screenshot 2024-03-22 at 08 31 53" src="https://github.com/BohTsR/BachThesis/assets/160582711/b46bdceb-c29d-4e7d-8994-80b382e6a9be">
+
+5. After successful installation, we should see this message in the terminal, which means that we are ready to work with ESP32
+<img width="585" alt="Screenshot 2024-03-22 at 08 34 36" src="https://github.com/BohTsR/BachThesis/assets/160582711/78d92adc-1b22-43fe-8aa5-e029acea22a4">
+
+##Usage
