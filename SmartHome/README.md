@@ -33,4 +33,4 @@ Basically, these are all the necessary components for a successful implementatio
 5. After successful installation, we should see this message in the terminal, which means that we are ready to work with ESP32
 <img width="585" alt="Screenshot 2024-03-22 at 08 34 36" src="https://github.com/BohTsR/BachThesis/assets/160582711/78d92adc-1b22-43fe-8aa5-e029acea22a4">
 
-##Usage
+## Usage
