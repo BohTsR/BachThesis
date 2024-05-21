@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 Data Visualization</title>
+    <link rel="icon" href="https://home.plant.automation.bucket.s3.amazonaws.com/favicon.ico">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        h1 { text-align: center; }
+        canvas { display: block; margin: 0 auto; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>ESP32 Data Visualization</h1>
+    <h2>Soil Moisture</h2>
+    <canvas id="soilMoistureChart"></canvas>
+    <h2>Humidity</h2>
+    <canvas id="humidityChart"></canvas>
+    <h2>Temperature</h2>
+    <canvas id="temperatureChart"></canvas>
+    <h2>Gas Values</h2>
+    <table id="gasTable">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>CO Gas</th>
+                <th>Smoke Gas</th>
+                <th>LPG Gas</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Data will be inserted here -->
+        </tbody>
+    </table>
+
+    <script>
+        const s3BucketUrl = 'https://home.plant.automation.bucket.s3.amazonaws.com/';
+        const jsonFiles = ['SmartHome_20240521025522.json', 'SmartPlant_20240521025524.json', 'SmartHome_20240521025621.json']; // Replace with your actual JSON file names
+
+        let soilMoistureChart, humidityChart, temperatureChart;
+
+        async function fetchData() {
+            const dataPromises = jsonFiles.map(file => fetch(s3BucketUrl + file).then(res => {
+                if (!res.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return res.json();
+            }));
+            return Promise.all(dataPromises);
+        }
+
+        function createCharts(data) {
+            const soilMoistureData = [];
+            const humidityData = [];
+            const temperatureData = [];
+            const gasData = [];
+
+            data.forEach(entry => {
+                const timestamp = new Date(entry.timestamp * 1000).toLocaleString();
+                if (entry.device_id === 'SmartPlant') {
+                    soilMoistureData.push({ x: timestamp, y: entry.soil_moisture });
+                } else if (entry.device_id === 'SmartHome') {
+                    humidityData.push({ x: timestamp, y: entry.humidity });
+                    temperatureData.push({ x: timestamp, y: entry.temperature });
+                    gasData.push({
+                        timestamp: timestamp,
+                        co_gas: entry.co_gas,
+                        smoke_gas: entry.smoke_gas,
+                        lpg_gas: entry.lpg_gas
+                    });
+                }
+            });
+
+            const soilMoistureCtx = document.getElementById('soilMoistureChart').getContext('2d');
+            soilMoistureChart = new Chart(soilMoistureCtx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'Soil Moisture',
+                        data: soilMoistureData,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1,
+                        fill: false
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: { type: 'time', time: { unit: 'minute' } },
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+
+            const humidityCtx = document.getElementById('humidityChart').getContext('2d');
+            humidityChart = new Chart(humidityCtx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'Humidity',
+                        data: humidityData,
+                        borderColor: 'rgba(153, 102, 255, 1)',
+                        borderWidth: 1,
+                        fill: false
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: { type: 'time', time: { unit: 'minute' } },
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+
+            const temperatureCtx = document.getElementById('temperatureChart').getContext('2d');
+            temperatureChart = new Chart(temperatureCtx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'Temperature',
+                        data: temperatureData,
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1,
+                        fill: false
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: { type: 'time', time: { unit: 'minute' } },
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        function updateCharts(data) {
+            const soilMoistureData = [];
+            const humidityData = [];
+            const temperatureData = [];
+            const gasData = [];
+
+            data.forEach(entry => {
+                const timestamp = new Date(entry.timestamp * 1000).toLocaleString();
+                if (entry.device_id === 'SmartPlant') {
+                    soilMoistureData.push({ x: timestamp, y: entry.soil_moisture });
+                } else if (entry.device_id === 'SmartHome') {
+                    humidityData.push({ x: timestamp, y: entry.humidity });
+                    temperatureData.push({ x: timestamp, y: entry.temperature });
+                    gasData.push({
+                        timestamp: timestamp,
+                        co_gas: entry.co_gas,
+                        smoke_gas: entry.smoke_gas,
+                        lpg_gas: entry.lpg_gas
+                    });
+                }
+            });
+
+            soilMoistureChart.data.datasets[0].data = soilMoistureData;
+            humidityChart.data.datasets[0].data = humidityData;
+            temperatureChart.data.datasets[0].data = temperatureData;
+            soilMoistureChart.update();
+            humidityChart.update();
+            temperatureChart.update();
+        }
+
+        function createTable(data) {
+            const tableBody = document.getElementById('gasTable').getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = '';
+
+            data.forEach(entry => {
+                const row = tableBody.insertRow();
+                const cellTimestamp = row.insertCell(0);
+                const cellCO = row.insertCell(1);
+                const cellSmoke = row.insertCell(2);
+                const cellLPG = row.insertCell(3);
+
+                cellTimestamp.textContent = entry.timestamp;
+                cellCO.textContent = entry.co_gas;
+                cellSmoke.textContent = entry.smoke_gas;
+                cellLPG.textContent = entry.lpg_gas;
+            });
+        }
+
+        function updateTable(data) {
+            const tableBody = document.getElementById('gasTable').getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = '';
+
+            data.forEach(entry => {
+                const row = tableBody.insertRow();
+                const cellTimestamp = row.insertCell(0);
+                const cellCO = row.insertCell(1);
+                const cellSmoke = row.insertCell(2);
+                const cellLPG = row.insertCell(3);
+
+                cellTimestamp.textContent = entry.timestamp;
+                cellCO.textContent = entry.co_gas;
+                cellSmoke.textContent = entry.smoke_gas;
+                cellLPG.textContent = entry.lpg_gas;
+            });
+        }
+
+        function initialize() {
+            fetchData().then(data => {
+                createCharts(data);
+                createTable(data);
+            }).catch(error => {
+                console.error('Error fetching data:', error);
+            });
+
+            setInterval(() => {
+                fetchData().then(data => {
+                    updateCharts(data);
+                    updateTable(data);
+                }).catch(error => {
+                    console.error('Error fetching data:', error);
+                });
+            }, 60000); // Fetch new data every 60 seconds
+        }
+
+        initialize();
+    </script>
+</body>
+</html>
