@@ -3,4 +3,4 @@ Greetings to everyone! In this repository, you will find instructions and explan
 ## This repository will include such projects as: 
 1. Smart Home
 2. Smart Plant
-3. something else :)
+3. Combined SmartPlantHome
