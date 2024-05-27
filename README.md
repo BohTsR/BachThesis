@@ -17,9 +17,8 @@ Here we will take a closer look at the Thonny IDE and all the necessary tools to
 
 ## Components and tools
 1. Microcontroller ESP32
-2. Sensors, such us DTH22
-3. Driver for ESP32
-4. Tohnny IDE
+2. Driver for ESP32
+3. Tohnny IDE
 
 Basically, these are all the necessary components for a successful implementation
 
