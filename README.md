@@ -13,7 +13,7 @@ Greetings to everyone! In this repository, you will find instructions and explan
 * [Examples](#examples)
 * [References](#references)
 
-Here we will take a closer look at the Smart Home project and all the necessary tools for its implementation
+Here we will take a closer look at the Thonny IDE and all the necessary tools to start the implementation
 
 ## Components and tools
 1. Microcontroller ESP32
