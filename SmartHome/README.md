@@ -20,8 +20,8 @@ The main point of the Smart Home project is to measure environmental indicators,
 This repository contains both the individual parts of the code for the sensors and the master code that is responsible for the complete measurement and sending of data to the Master ESP32.
 
 ## References
-1.[Code resource for HTU21D](https://github.com/Kleity/HTU21D-Micropython-ESP32/blob/master/HTU21D(F).py)
-2.[Code resource for MQ9](https://github.com/leech001/MQ9)
-3.[Code resource for motion sensor](https://randomnerdtutorials.com/micropython-interrupts-esp32-esp8266/)
-4.[Code resource for OLED](https://randomnerdtutorials.com/micropython-oled-display-esp32-esp8266/)
+1. [Code resource for HTU21D](https://github.com/Kleity/HTU21D-Micropython-ESP32/blob/master/HTU21D(F).py)
+2. [Code resource for MQ9](https://github.com/leech001/MQ9)
+3. [Code resource for motion sensor](https://randomnerdtutorials.com/micropython-interrupts-esp32-esp8266/)
+4. [Code resource for OLED](https://randomnerdtutorials.com/micropython-oled-display-esp32-esp8266/)
 
