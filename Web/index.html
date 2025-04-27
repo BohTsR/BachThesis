@@ -19,8 +19,6 @@
     nav a { margin: 0 10px; text-decoration: none; font-weight: bold; color: #007BFF; }
     nav a:hover { text-decoration: underline; }
     .gauge-container { text-align: center; margin-top: 40px; }
-    .status-container { display: flex; justify-content: center; gap: 20px; margin: 20px 0; }
-    .status-card { padding: 20px; border-radius: 8px; font-size: 1.2rem; font-weight: bold; color: #333; min-width: 200px; text-align: center; }
   </style>
 </head>
 <body>
@@ -46,7 +44,6 @@
     <canvas id="coGauge" width="300" height="150"></canvas>
     <p id="coLevelText">CO Gas Level: N/A</p>
   </div>
-
   <script>
     let tempChart, humChart, coGauge, coGaugeText;
 
@@ -90,41 +87,50 @@
     async function fetchTodayDataAndUpdateCharts() {
       try {
         const response = await fetch('SmartHome.json');
-        if (!response.ok) throw new Error("Failed to fetch data");
+        if (!response.ok) return;
         const rawData = await response.json();
 
         const now = new Date();
-        const todayString = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`;
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+        const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
 
         const filtered = rawData.filter(entry => {
-          return entry.device_id === 'SmartHome' && entry.Readable_Time && entry.Readable_Time.includes(todayString);
+          const ts = entry.timestamp * 1000;
+          return entry.device_id === 'SmartHome' && ts >= startOfDay.getTime() && ts <= endOfDay.getTime();
         });
-
-        if (filtered.length === 0) {
-          document.getElementById("lastUpdate").textContent = "No data available for today.";
-          return;
-        }
 
         const temperature = filtered.map(entry => ({ x: entry.timestamp * 1000, y: parseFloat(entry.temperature.toFixed(1)) }));
         const humidity = filtered.map(entry => ({ x: entry.timestamp * 1000, y: parseFloat(entry.humidity.toFixed(1)) }));
-        const latestCO = filtered[filtered.length - 1].co_gas;
-        const latestTimestamp = new Date(filtered[filtered.length - 1].timestamp * 1000);
+        const latestCO = filtered.length ? filtered[filtered.length - 1].co_gas : 0;
+        const latestTimestamp = filtered.length ? new Date(filtered[filtered.length - 1].timestamp * 1000) : null;
 
-        const formatted = `${latestTimestamp.getHours()}:${String(latestTimestamp.getMinutes()).padStart(2, '0')}.${latestTimestamp.getDate()}.${latestTimestamp.getFullYear()}`;
-        document.getElementById("lastUpdate").textContent = `Last update: ${formatted}`;
+        if (latestTimestamp) {
+          const formatted = `${latestTimestamp.getHours()}:${String(latestTimestamp.getMinutes()).padStart(2, '0')}.${latestTimestamp.getDate()}.${latestTimestamp.getFullYear()}`;
+          document.getElementById("lastUpdate").textContent = `Last update: ${formatted}`;
+        }
+
+        const commonOptions = {
+          elements: { line: { tension: 0.4 } },
+          scales: {
+            x: {
+              type: 'time',
+              time: { unit: 'hour', displayFormats: { hour: 'HH:mm' } },
+              min: startOfDay.getTime(),
+              max: endOfDay.getTime(),
+              title: { display: true, text: 'Time' }
+            },
+            y: {
+              beginAtZero: true
+            }
+          }
+        };
 
         if (!tempChart) {
           const tempCtx = document.getElementById('temperatureTodayChart').getContext('2d');
           tempChart = new Chart(tempCtx, {
             type: 'line',
             data: { datasets: [{ label: 'Temperature', data: temperature, borderColor: 'rgba(255,99,132,1)', fill: false, pointRadius: 0 }] },
-            options: {
-              elements: { line: { tension: 0.4 } },
-              scales: {
-                x: { type: 'time', time: { unit: 'hour', tooltipFormat: 'HH:mm' }, title: { display: true, text: 'Time' } },
-                y: { beginAtZero: true, title: { display: true, text: 'Temperature' } }
-              }
-            }
+            options: commonOptions
           });
         } else {
           tempChart.data.datasets[0].data = temperature;
@@ -136,13 +142,7 @@
           humChart = new Chart(humCtx, {
             type: 'line',
             data: { datasets: [{ label: 'Humidity', data: humidity, borderColor: 'rgba(54,162,235,1)', fill: false, pointRadius: 0 }] },
-            options: {
-              elements: { line: { tension: 0.4 } },
-              scales: {
-                x: { type: 'time', time: { unit: 'hour', tooltipFormat: 'HH:mm' }, title: { display: true, text: 'Time' } },
-                y: { beginAtZero: true, title: { display: true, text: 'Humidity' } }
-              }
-            }
+            options: commonOptions
           });
         } else {
           humChart.data.datasets[0].data = humidity;
@@ -154,7 +154,6 @@
 
       } catch (error) {
         console.error("Failed to fetch and update charts:", error);
-        document.getElementById("lastUpdate").textContent = "Error loading data.";
       }
     }
 
