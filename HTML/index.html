@@ -1,345 +1,165 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESP32 Data Visualization</title>
-    <link rel="icon" href="https://home.plant.automation.bucket.s3.amazonaws.com/favicon.ico">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
-    <style>
-        body { font-family: Arial, sans-serif; }
-        h1 { text-align: center; }
-        .chart-container { display: flex; flex-wrap: wrap; justify-content: space-around; }
-        .chart-container > div { width: 45%; margin: 20px 0; }
-        canvas { width: 100%; height: 400px; }
-        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-        th { background-color: #f2f2f2; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ESP32 Live Data</title>
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gauge.js/1.3.7/gauge.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    h1, h2 { text-align: center; }
+    #lastUpdate { text-align: center; font-size: 1rem; margin-top: -10px; margin-bottom: 10px; }
+    .chart-container { display: flex; flex-wrap: wrap; justify-content: space-around; }
+    .chart-container > div { width: 45%; margin: 20px 0; }
+    canvas { width: 100%; height: 400px; }
+    nav { text-align: center; margin: 20px 0; }
+    nav a { margin: 0 10px; text-decoration: none; font-weight: bold; color: #007BFF; }
+    nav a:hover { text-decoration: underline; }
+    .gauge-container { text-align: center; margin-top: 40px; }
+    .status-container { display: flex; justify-content: center; gap: 20px; margin: 20px 0; }
+    .status-card { padding: 20px; border-radius: 8px; font-size: 1.2rem; font-weight: bold; color: #333; min-width: 200px; text-align: center; }
+  </style>
 </head>
 <body>
-    <h1>ESP32 Data Visualization</h1>
-    <div class="chart-container">
-        <div>
-            <h2>Soil Moisture</h2>
-            <canvas id="soilMoistureChart"></canvas>
-        </div>
-        <div>
-            <h2>Humidity</h2>
-            <canvas id="humidityChart"></canvas>
-        </div>
-        <div>
-            <h2>Temperature</h2>
-            <canvas id="temperatureChart"></canvas>
-        </div>
-        <div>
-            <h2>CO Gas Concentration</h2>
-            <canvas id="coGasChart"></canvas>
-        </div>
+  <h1>ESP32 Live Temperature & Humidity</h1>
+  <p id="lastUpdate">Last update: loading...</p>
+  <nav>
+    <a href="index.html">Live Dashboard</a>
+    <a href="history.html">View Historical Data</a>
+    <a href="alertDetection.html">Alert Detection</a>
+  </nav>
+  <div class="chart-container">
+    <div>
+      <h2>Temperature (Today)</h2>
+      <canvas id="temperatureTodayChart"></canvas>
     </div>
-    <h2>Gas Values</h2>
-    <table id="gasTable">
-        <thead>
-            <tr>
-                <th>Timestamp</th>
-                <th>CO Gas</th>
-                <th>Smoke Gas</th>
-                <th>LPG Gas</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Data will be inserted here -->
-        </tbody>
-    </table>
-    <h2>Motion Detected</h2>
-    <table id="motionTable">
-        <thead>
-            <tr>
-                <th>Timestamp</th>
-                <th>Motion Detected</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Data will be inserted here -->
-        </tbody>
-    </table>
-    <h2>Fire Detected</h2>
-    <table id="fireTable">
-        <thead>
-            <tr>
-                <th>Timestamp</th>
-                <th>Fire Detected</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Data will be inserted here -->
-        </tbody>
-    </table>
+    <div>
+      <h2>Humidity (Today)</h2>
+      <canvas id="humidityTodayChart"></canvas>
+    </div>
+  </div>
+  <div class="gauge-container">
+    <h2>CO Gas Level</h2>
+    <canvas id="coGauge" width="300" height="150"></canvas>
+    <p id="coLevelText">CO Gas Level: N/A</p>
+  </div>
 
-    <script>
-        const jsonFiles = ['SmartHome.json', 'SmartPlant.json'];
+  <script>
+    let tempChart, humChart, coGauge, coGaugeText;
 
-        let soilMoistureChart, humidityChart, temperatureChart, coGasChart;
+    const coGaugeOpts = {
+      angle: 0,
+      lineWidth: 0.3,
+      radiusScale: 1,
+      pointer: {
+        length: 0.6,
+        strokeWidth: 0.035,
+        color: '#000000'
+      },
+      limitMax: false,
+      limitMin: false,
+      colorStart: '#6FADCF',
+      colorStop: '#8FC0DA',
+      strokeColor: '#E0E0E0',
+      generateGradient: true,
+      highDpiSupport: true,
+      staticZones: [
+        { strokeStyle: "#30B32D", min: 0, max: 35 },
+        { strokeStyle: "#FFDD00", min: 36, max: 100 },
+        { strokeStyle: "#F03E3E", min: 101, max: 300 }
+      ],
+      staticLabels: {
+        font: "12px sans-serif",
+        labels: [0, 35, 100, 300],
+        color: "#000",
+        fractionDigits: 0
+      }
+    };
 
-        async function fetchData() {
-            const dataPromises = jsonFiles.map(file => fetch(file).then(res => {
-                if (!res.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return res.json();
-            }));
-            return Promise.all(dataPromises);
+    const coGaugeTarget = document.getElementById('coGauge');
+    coGauge = new Gauge(coGaugeTarget).setOptions(coGaugeOpts);
+    coGauge.maxValue = 300;
+    coGauge.setMinValue(0);
+    coGauge.animationSpeed = 32;
+    coGauge.set(0);
+    coGaugeText = document.getElementById("coLevelText");
+
+    async function fetchTodayDataAndUpdateCharts() {
+      try {
+        const response = await fetch('SmartHome.json');
+        if (!response.ok) throw new Error("Failed to fetch data");
+        const rawData = await response.json();
+
+        const now = new Date();
+        const todayString = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`;
+
+        const filtered = rawData.filter(entry => {
+          return entry.device_id === 'SmartHome' && entry.Readable_Time && entry.Readable_Time.includes(todayString);
+        });
+
+        if (filtered.length === 0) {
+          document.getElementById("lastUpdate").textContent = "No data available for today.";
+          return;
         }
 
-        function createCharts(data) {
-            console.log('Data received:', data);
+        const temperature = filtered.map(entry => ({ x: entry.timestamp * 1000, y: parseFloat(entry.temperature.toFixed(1)) }));
+        const humidity = filtered.map(entry => ({ x: entry.timestamp * 1000, y: parseFloat(entry.humidity.toFixed(1)) }));
+        const latestCO = filtered[filtered.length - 1].co_gas;
+        const latestTimestamp = new Date(filtered[filtered.length - 1].timestamp * 1000);
 
-            const soilMoistureData = [];
-            const humidityData = [];
-            const temperatureData = [];
-            const coGasData = [];
-            const gasData = [];
-            const motionData = [];
-            const fireData = [];
+        const formatted = `${latestTimestamp.getHours()}:${String(latestTimestamp.getMinutes()).padStart(2, '0')}.${latestTimestamp.getDate()}.${latestTimestamp.getFullYear()}`;
+        document.getElementById("lastUpdate").textContent = `Last update: ${formatted}`;
 
-            data.forEach(deviceData => {
-                deviceData.forEach(entry => {
-                    if (!entry.timestamp) {
-                        console.error('Missing timestamp in entry:', entry);
-                        return;
-                    }
-                    const timestamp = entry.timestamp * 1000; // Convert to milliseconds for JavaScript Date
-                    if (entry.device_id === 'SmartPlant') {
-                        soilMoistureData.push({ x: timestamp, y: entry.soil_moisture });
-                        if (entry.motion_detected !== undefined) {
-                            motionData.push({ timestamp: timestamp, motion: entry.motion_detected });
-                        }
-                        if (entry.fire_detected !== undefined) {
-                            fireData.push({ timestamp: timestamp, fire: entry.fire_detected });
-                        }
-                    } else if (entry.device_id === 'SmartHome') {
-                        humidityData.push({ x: timestamp, y: entry.humidity });
-                        temperatureData.push({ x: timestamp, y: entry.temperature });
-                        coGasData.push({ x: timestamp, y: entry.co_gas });
-                        gasData.push({
-                            timestamp: timestamp,
-                            co_gas: entry.co_gas,
-                            smoke_gas: entry.smoke_gas,
-                            lpg_gas: entry.lpg_gas
-                        });
-                    }
-                });
-            });
-
-            console.log('Soil Moisture Data:', soilMoistureData);
-            console.log('Humidity Data:', humidityData);
-            console.log('Temperature Data:', temperatureData);
-            console.log('CO Gas Data:', coGasData);
-            console.log('Gas Table Data:', gasData);
-            console.log('Motion Data:', motionData);
-            console.log('Fire Data:', fireData);
-
-            const soilMoistureCtx = document.getElementById('soilMoistureChart').getContext('2d');
-            soilMoistureChart = new Chart(soilMoistureCtx, {
-                type: 'line',
-                data: {
-                    datasets: [{
-                        label: 'Soil Moisture',
-                        data: soilMoistureData,
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 1,
-                        fill: false
-                    }]
-                },
-                options: {
-                    parsing: true,
-                    normalized: true,
-                    scales: {
-                        x: { type: 'time', time: { unit: 'minute', tooltipFormat: 'dd MMM yyyy HH:mm:ss' }, title: { display: true, text: 'Time' } },
-                        y: { beginAtZero: true, title: { display: true, text: 'Soil Moisture' } }
-                    }
-                }
-            });
-
-            const humidityCtx = document.getElementById('humidityChart').getContext('2d');
-            humidityChart = new Chart(humidityCtx, {
-                type: 'line',
-                data: {
-                    datasets: [{
-                        label: 'Humidity',
-                        data: humidityData,
-                        borderColor: 'rgba(153, 102, 255, 1)',
-                        borderWidth: 1,
-                        fill: false
-                    }]
-                },
-                options: {
-                    parsing: true,
-                    normalized: true,
-                    scales: {
-                        x: { type: 'time', time: { unit: 'minute', tooltipFormat: 'dd MMM yyyy HH:mm:ss' }, title: { display: true, text: 'Time' } },
-                        y: { beginAtZero: true, title: { display: true, text: 'Humidity' } }
-                    }
-                }
-            });
-
-            const temperatureCtx = document.getElementById('temperatureChart').getContext('2d');
-            temperatureChart = new Chart(temperatureCtx, {
-                type: 'line',
-                data: {
-                    datasets: [{
-                        label: 'Temperature',
-                        data: temperatureData,
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 1,
-                        fill: false
-                    }]
-                },
-                options: {
-                    parsing: true,
-                    normalized: true,
-                    scales: {
-                        x: { type: 'time', time: { unit: 'minute', tooltipFormat: 'dd MMM yyyy HH:mm:ss' }, title: { display: true, text: 'Time' } },
-                        y: { beginAtZero: true, title: { display: true, text: 'Temperature' } }
-                    }
-                }
-            });
-
-            const coGasCtx = document.getElementById('coGasChart').getContext('2d');
-            coGasChart = new Chart(coGasCtx, {
-                type: 'line',
-                data: {
-                    datasets: [{
-                        label: 'CO Gas Concentration',
-                        data: coGasData,
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1,
-                        fill: false
-                    }]
-                },
-                options: {
-                    parsing: true,
-                    normalized: true,
-                    scales: {
-                        x: { type: 'time', time: { unit: 'minute', tooltipFormat: 'dd MMM yyyy HH:mm:ss' }, title: { display: true, text: 'Time' } },
-                        y: { beginAtZero: true, title: { display: true, text: 'CO Gas Concentration' } }
-                    }
-                }
-            });
+        if (!tempChart) {
+          const tempCtx = document.getElementById('temperatureTodayChart').getContext('2d');
+          tempChart = new Chart(tempCtx, {
+            type: 'line',
+            data: { datasets: [{ label: 'Temperature', data: temperature, borderColor: 'rgba(255,99,132,1)', fill: false, pointRadius: 0 }] },
+            options: {
+              elements: { line: { tension: 0.4 } },
+              scales: {
+                x: { type: 'time', time: { unit: 'hour', tooltipFormat: 'HH:mm' }, title: { display: true, text: 'Time' } },
+                y: { beginAtZero: true, title: { display: true, text: 'Temperature' } }
+              }
+            }
+          });
+        } else {
+          tempChart.data.datasets[0].data = temperature;
+          tempChart.update();
         }
 
-        function formatTimestamp(timestamp) {
-            const date = new Date(timestamp);
-            return date.toLocaleString(); // Use toLocaleString() for a readable date format
+        if (!humChart) {
+          const humCtx = document.getElementById('humidityTodayChart').getContext('2d');
+          humChart = new Chart(humCtx, {
+            type: 'line',
+            data: { datasets: [{ label: 'Humidity', data: humidity, borderColor: 'rgba(54,162,235,1)', fill: false, pointRadius: 0 }] },
+            options: {
+              elements: { line: { tension: 0.4 } },
+              scales: {
+                x: { type: 'time', time: { unit: 'hour', tooltipFormat: 'HH:mm' }, title: { display: true, text: 'Time' } },
+                y: { beginAtZero: true, title: { display: true, text: 'Humidity' } }
+              }
+            }
+          });
+        } else {
+          humChart.data.datasets[0].data = humidity;
+          humChart.update();
         }
 
-        function createTable(data, tableId) {
-            const tableBody = document.getElementById(tableId).getElementsByTagName('tbody')[0];
-            tableBody.innerHTML = '';
+        coGauge.set(latestCO);
+        coGaugeText.textContent = `CO Gas Level: ${latestCO} ppm`;
 
-            // Display only the last 15 values
-            const recentData = data.slice(-15);
+      } catch (error) {
+        console.error("Failed to fetch and update charts:", error);
+        document.getElementById("lastUpdate").textContent = "Error loading data.";
+      }
+    }
 
-            recentData.forEach(rowData => {
-                const row = tableBody.insertRow();
-                Object.keys(rowData).forEach(key => {
-                    const cell = row.insertCell();
-                    if (key === 'timestamp') {
-                        cell.textContent = formatTimestamp(rowData[key]);
-                    } else {
-                        cell.textContent = rowData[key];
-                    }
-                });
-            });
-        }
-
-        function initialize() {
-            fetchData().then(data => {
-                const filteredData = data.map(deviceData => deviceData.filter(entry => entry.timestamp));
-                createCharts(filteredData);
-
-                const gasData = filteredData.flatMap(deviceData => deviceData.filter(entry => entry.device_id === 'SmartHome').map(entry => ({
-                    timestamp: entry.timestamp * 1000, // Convert to milliseconds for JavaScript Date
-                    co_gas: entry.co_gas,
-                    smoke_gas: entry.smoke_gas,
-                    lpg_gas: entry.lpg_gas
-                })));
-                createTable(gasData, 'gasTable');
-
-                const motionData = filteredData.flatMap(deviceData => deviceData.filter(entry => entry.device_id === 'SmartPlant' && entry.motion_detected !== undefined).map(entry => ({
-                    timestamp: entry.timestamp * 1000, // Convert to milliseconds for JavaScript Date
-                    motion: entry.motion_detected
-                })));
-                createTable(motionData, 'motionTable');
-
-                const fireData = filteredData.flatMap(deviceData => deviceData.filter(entry => entry.device_id === 'SmartPlant' && entry.fire_detected !== undefined).map(entry => ({
-                    timestamp: entry.timestamp * 1000, // Convert to milliseconds for JavaScript Date
-                    fire: entry.fire_detected
-                })));
-                createTable(fireData, 'fireTable');
-            }).catch(error => {
-                console.error('Error fetching data:', error);
-            });
-
-            setInterval(() => {
-                fetchData().then(data => {
-                    const filteredData = data.map(deviceData => deviceData.filter(entry => entry.timestamp));
-
-                    const soilMoistureData = filteredData.flatMap(deviceData => deviceData.filter(entry => entry.device_id === 'SmartPlant').map(entry => ({
-                        x: entry.timestamp * 1000, // Convert to milliseconds for JavaScript Date
-                        y: entry.soil_moisture
-                    })));
-                    soilMoistureChart.data.datasets[0].data = soilMoistureData;
-                    soilMoistureChart.update();
-
-                    const humidityData = filteredData.flatMap(deviceData => deviceData.filter(entry => entry.device_id === 'SmartHome').map(entry => ({
-                        x: entry.timestamp * 1000, // Convert to milliseconds for JavaScript Date
-                        y: entry.humidity
-                    })));
-                    humidityChart.data.datasets[0].data = humidityData;
-                    humidityChart.update();
-
-                    const temperatureData = filteredData.flatMap(deviceData => deviceData.filter(entry => entry.device_id === 'SmartHome').map(entry => ({
-                        x: entry.timestamp * 1000, // Convert to milliseconds for JavaScript Date
-                        y: entry.temperature
-                    })));
-                    temperatureChart.data.datasets[0].data = temperatureData;
-                    temperatureChart.update();
-
-                    const coGasData = filteredData.flatMap(deviceData => deviceData.filter(entry => entry.device_id === 'SmartHome').map(entry => ({
-                        x: entry.timestamp * 1000, // Convert to milliseconds for JavaScript Date
-                        y: entry.co_gas
-                    })));
-                    coGasChart.data.datasets[0].data = coGasData;
-                    coGasChart.update();
-
-                    const gasData = filteredData.flatMap(deviceData => deviceData.filter(entry => entry.device_id === 'SmartHome').map(entry => ({
-                        timestamp: entry.timestamp * 1000, // Convert to milliseconds for JavaScript Date
-                        co_gas: entry.co_gas,
-                        smoke_gas: entry.smoke_gas,
-                        lpg_gas: entry.lpg_gas
-                    })));
-                    createTable(gasData, 'gasTable');
-
-                    const motionData = filteredData.flatMap(deviceData => deviceData.filter(entry => entry.device_id === 'SmartPlant' && entry.motion_detected !== undefined).map(entry => ({
-                        timestamp: entry.timestamp * 1000, // Convert to milliseconds for JavaScript Date
-                        motion: entry.motion_detected
-                    })));
-                    createTable(motionData, 'motionTable');
-
-                    const fireData = filteredData.flatMap(deviceData => deviceData.filter(entry => entry.device_id === 'SmartPlant' && entry.fire_detected !== undefined).map(entry => ({
-                        timestamp: entry.timestamp * 1000, // Convert to milliseconds for JavaScript Date
-                        fire: entry.fire_detected
-                    })));
-                    createTable(fireData, 'fireTable');
-                }).catch(error => {
-                    console.error('Error fetching data:', error);
-                });
-            }, 5000); // Fetch new data every 5 seconds
-        }
-
-        initialize();
-    </script>
+    fetchTodayDataAndUpdateCharts();
+    setInterval(fetchTodayDataAndUpdateCharts, 1000);
+  </script>
 </body>
 </html>

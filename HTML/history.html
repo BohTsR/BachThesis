@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ESP32 Historical Data</title>
+  <link rel="icon" href="https://home.plant.automation.bucket.s3.amazonaws.com/favicon.ico">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    h1, h2 { text-align: center; }
+    .chart-container { display: flex; flex-wrap: wrap; justify-content: space-around; }
+    .chart-container > div { width: 45%; margin: 20px 0; }
+    canvas { width: 100%; height: 400px; }
+    nav { text-align: center; margin: 20px 0; }
+    nav a { margin: 0 10px; text-decoration: none; font-weight: bold; color: #007BFF; }
+    nav a:hover { text-decoration: underline; }
+    #dateInput { display: block; margin: 0 auto 20px auto; text-align: center; }
+  </style>
+</head>
+<body>
+  <h1>ESP32 Historical Temperature & Humidity</h1>
+  <nav>
+    <a href="index.html">Live Dashboard</a>
+    <a href="history.html">View Historical Data</a>
+  </nav>
+  <div id="dateInput">
+    <label for="historyDate">Select a Date:</label>
+    <input type="date" id="historyDate">
+  </div>
+  <div class="chart-container">
+    <div>
+      <h2>Temperature (Selected Date)</h2>
+      <canvas id="tempHistoryChart"></canvas>
+    </div>
+    <div>
+      <h2>Humidity (Selected Date)</h2>
+      <canvas id="humHistoryChart"></canvas>
+    </div>
+  </div>
+  <script>
+    document.getElementById('historyDate').addEventListener('change', async function () {
+      const selectedDate = new Date(this.value);
+      selectedDate.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(selectedDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const response = await fetch('SmartHome.json');
+      const rawData = await response.json();
+
+      const filtered = rawData.filter(entry => {
+        const ts = entry.timestamp * 1000;
+        return entry.device_id === 'SmartHome' && ts >= selectedDate.getTime() && ts <= endOfDay.getTime();
+      });
+
+      const temperature = filtered.map(entry => ({ x: entry.timestamp * 1000, y: entry.temperature }));
+      const humidity = filtered.map(entry => ({ x: entry.timestamp * 1000, y: entry.humidity }));
+
+      const tempCtx = document.getElementById('tempHistoryChart').getContext('2d');
+      if (window.tempChart) window.tempChart.destroy();
+      window.tempChart = new Chart(tempCtx, {
+        type: 'line',
+        data: { datasets: [{ label: 'Temperature', data: temperature, borderColor: 'rgba(255,99,132,1)', fill: false }] },
+        options: {
+          scales: {
+            x: { type: 'time', time: { unit: 'hour', tooltipFormat: 'HH:mm' }, title: { display: true, text: 'Time' } },
+            y: { beginAtZero: true, title: { display: true, text: 'Temperature' } }
+          }
+        }
+      });
+
+      const humCtx = document.getElementById('humHistoryChart').getContext('2d');
+      if (window.humChart) window.humChart.destroy();
+      window.humChart = new Chart(humCtx, {
+        type: 'line',
+        data: { datasets: [{ label: 'Humidity', data: humidity, borderColor: 'rgba(54,162,235,1)', fill: false }] },
+        options: {
+          scales: {
+            x: { type: 'time', time: { unit: 'hour', tooltipFormat: 'HH:mm' }, title: { display: true, text: 'Time' } },
+            y: { beginAtZero: true, title: { display: true, text: 'Humidity' } }
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>
