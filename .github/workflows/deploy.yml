@@ -22,7 +22,7 @@ jobs:
 
       - name: Upload files to S3
         run: |
-          aws s3 sync . s3://home.plant.automation.bucket --delete \
+          aws s3 sync ./Web/ s3://your-bucket-name --delete
           --exclude "LICENSE" \
           --exclude "README.md" \
           --exclude "AWS/*" \
