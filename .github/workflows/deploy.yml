@@ -27,6 +27,8 @@ jobs:
           --exclude "README.md" \
           --exclude "AWS/*" \
           --exclude "ESP-NOW/*" \
+          --exclude "SmartHome/*" \
+          --exclude "SmartPlant/*" \
           --exclude ".git/*" \
           --exclude ".github/*"
 
