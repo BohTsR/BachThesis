@@ -21,7 +21,14 @@ jobs:
           aws-region: us-east-1
 
       - name: Upload files to S3
-        run: aws s3 sync . s3://home.plant.automation.bucket --delete
+        run: |
+          aws s3 sync . s3://your-bucket-name --delete \
+          --exclude \"LICENSE\" \
+          --exclude \"README.md\" \
+          --exclude \"AWS/*\" \
+          --exclude \"ESP-NOW/*\" \
+          --exclude \".git/*\" \
+          --exclude \".github/*\"
 
       - name: Invalidate CloudFront cache
         run: aws cloudfront create-invalidation --distribution-id E17C4EQ4U21Z4C  --paths '/*'
