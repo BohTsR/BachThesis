@@ -20,17 +20,25 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Upload files to S3
+      - name: Upload static web files to S3
         run: |
-          aws s3 sync ./Web/ s3://home.plant.automation.bucket --delete \
-          --exclude "LICENSE" \
-          --exclude "README.md" \
-          --exclude "AWS/*" \
-          --exclude "ESP-NOW/*" \
-          --exclude "SmartHome/*" \
-          --exclude "SmartPlant/*" \
-          --exclude ".git/*" \
-          --exclude ".github/*"
+          aws s3 sync ./Web/ s3://home.plant.automation.bucket \
+            --delete \
+            --exact-timestamps \
+            --exclude "LICENSE" \
+            --exclude "README.md" \
+            --exclude "AWS/*" \
+            --exclude "ESP-NOW/*" \
+            --exclude "SmartHome/*" \
+            --exclude "SmartPlant/*" \
+            --exclude "SmartHome-live/*" \
+            --exclude "SmartHome-history/*" \
+            --exclude "**/*.json" \
+            --exclude ".git/*" \
+            --exclude ".github/*"
 
       - name: Invalidate CloudFront cache
-        run: aws cloudfront create-invalidation --distribution-id E17C4EQ4U21Z4C --paths '/*'
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id E17C4EQ4U21Z4C \
+            --paths '/*'
