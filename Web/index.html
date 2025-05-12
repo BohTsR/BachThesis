@@ -23,9 +23,9 @@
 </head>
 <body>
   <h1>ESP32 Live Temperature & Humidity</h1>
-  <h2>Current Weather</h2>
-    <p id="weatherBox">Loading...</p>
   <p id="lastUpdate">Last update: loading...</p>
+  <h2>Current Weather</h2>
+  <p id="weatherBox">Loading...</p>
   <nav>
     <a href="index.html">Live Dashboard</a>
     <a href="history.html">View Historical Data</a>
@@ -168,7 +168,7 @@
         const appid = e89b9eec0a2a2f4138996a47e5e03c4e;
         baseUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${appid}&units=metric`;
 
-        fetch(url)
+        fetch(baseUrl)
             .then(response => {
                 if (!response.ok) throw new Error('Network error');
                 return response.json();
