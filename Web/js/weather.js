@@ -1,4 +1,4 @@
-function fethDataFrompOpenWeather() {
+function fetchDataFromOpenWeather() {
 
     const lat = 50.126825;
     const lon = 14.464630;
@@ -19,4 +19,10 @@ function fethDataFrompOpenWeather() {
     });
 }
 
-setInterval(fethDataFrompOpenWeather, 1000*60*5);
+const refreshBtn = document.getElementById("btnRefresh");
+function handleClick() {
+    fetchDataFromOpenWeather(); 
+}
+refreshBtn.addEventListener("click", handleClick);
+
+setInterval(fetchDataFromOpenWeather, 1000*60*5);
